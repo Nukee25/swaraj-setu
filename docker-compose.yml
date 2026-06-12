@@ -1,0 +1,55 @@
+services:
+  frontend:
+    build: ./frontend
+    environment:
+      - REACT_APP_API_URL=http://backend:8000/api
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    depends_on:
+      - backend
+    networks:
+      - publicweb
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  backend:
+    build: ./backend
+    environment:
+      - MONGODB_URI=mongodb://root:password@mongodb:27017/swaraj-setu?authSource=admin
+      - MONGODB_NAME=swaraj-setu
+      - OLLAMA_HOST=http://ollama:11434
+      - DJANGO_DEBUG=true
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+      - DJANGO_SUPERUSER_PASSWORD=vaidya-admin-dev
+    networks:
+      - publicweb
+      - api
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./mongo-data:/data/db
+    networks:
+      - api
+
+  ollama:
+    image: ollama/ollama:rocm
+    volumes:
+      - ./ollama-data:/root/.ollama
+    networks:
+      - api
+
+networks:
+  api:
+  publicweb:
+    external: true
