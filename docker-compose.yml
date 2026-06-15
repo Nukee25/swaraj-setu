@@ -29,8 +29,7 @@ services:
       - api
     volumes:
       - ./backend:/app
-    depends_on:
-      - mongodb
+
 
   mongodb:
     image: mongo:latest
