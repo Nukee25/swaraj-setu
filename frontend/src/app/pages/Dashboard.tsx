@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { AlertCircle, CheckCircle2, Clock, TrendingUp, Plus } from "lucide-react";
 import { Link } from "react-router";
 import { ComplaintStatus } from "../types/complaint";
+import { api } from "../utils/api";
 
 export function Dashboard() {
   const { complaints, updateStatus } = useComplaints();

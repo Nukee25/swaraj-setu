@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Search, Filter } from "lucide-react";
 import { Link } from "react-router";
 import { Department, ComplaintStatus } from "../types/complaint";
+import { api } from "../utils/api";
 
 export function Complaints() {
   const { complaints } = useComplaints();

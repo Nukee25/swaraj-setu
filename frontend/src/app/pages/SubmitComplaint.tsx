@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Department } from "../types/complaint";
 import { useComplaints } from "../context/ComplaintContext";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../utils/api";
 
 const DEPARTMENTS: Department[] = [
   "Water Supply", "Electricity", "Roads & Transport", "Sanitation",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/button";
@@ -8,12 +8,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Separator } from "../components/ui/separator";
 import { Shield, User } from "lucide-react";
 import logoImage from "figma:asset/98f3f2f79a2b40306096f605e1f0bbbea5c3ac7e.png";
+import { api } from "../utils/api";
 
 export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Check if user is already authenticated on mount
+  useEffect(() => {
+    api
+      .get("/auth/check")
+      .then((response) => {
+        if (response?.authenticated === true) {
+          login(response.email ?? "user", response.role ?? "public");
+          navigate("/dashboard");
+        }
+      })
+      .catch((error) => {
+        console.error("Auth check failed:", error);
+      });
+  }, [login, navigate]);
 
   const handleMockLogin = (role: "public" | "admin") => {
     const mockEmail = role === "admin" ? "admin@swarajsetu.gov.in" : "citizen@example.com";
@@ -23,15 +39,26 @@ export function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default to public user when using the form directly
-    login(email || "citizen@example.com", "public");
-    navigate("/dashboard");
+
+    api
+      .get(`/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`)
+      .then((response) => {
+        if (response?.token) {
+          if (api) api.Token = response.token;
+          localStorage.setItem("authToken", response.token);
+        }
+        login(response?.email ?? email, response?.role ?? "public");
+        navigate("/dashboard");
+      })
+      .catch((error) => {
+        console.error("Login failed:", error);
+        alert(error?.message ?? "Login failed. Please try again.");
+      });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-blue-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-3 text-center">
           <img src={logoImage} alt="SwarajSetu Logo" className="w-20 h-20 rounded-2xl shadow-lg" />
           <div>
@@ -57,6 +84,7 @@ export function Login() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -67,6 +95,7 @@ export function Login() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
               </div>
               <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800">

@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { Separator } from "../components/ui/separator";
 import { ArrowLeft, Calendar, User, Building2, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { api } from "../utils/api";
 
 export function ComplaintDetail() {
   const { id } = useParams();
