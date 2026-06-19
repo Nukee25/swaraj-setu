@@ -26,11 +26,7 @@ export function Dashboard() {
     inProgress: complaints.filter((c) => c.status === "in-progress").length,
     resolved: complaints.filter((c) => c.status === "resolved").length,
   };
-  const pieData = [
-  { name: "Pending", value: stats.pending },
-  { name: "In Progress", value: stats.inProgress },
-  { name: "Resolved", value: stats.resolved },
-];
+
 const COLORS = ["#facc15", "#3b82f6", "#22c55e"];
 
 
@@ -243,33 +239,6 @@ const COLORS = ["#facc15", "#3b82f6", "#22c55e"];
             </div>
           </CardContent>
         </Card>
-       <Card className="mt-6">
-  <CardHeader>
-    <CardTitle>Complaint Status Overview</CardTitle>
-    <CardDescription>Visual breakdown of complaint statuses</CardDescription>
-  </CardHeader>
-  <CardContent className="h-64">
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie
-          data={pieData}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={80}
-          label
-        >
-          {pieData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip />
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
-  </CardContent>
-</Card>
  
       </div>
     </div>
