@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect,useState } from "react";
 import { useNavigate } from "react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -12,6 +12,22 @@ import { Department } from "../types/complaint";
 import { useComplaints } from "../context/ComplaintContext";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../utils/api";
+
+export function Complaints() {
+  const [complaints, setComplaints] = useState([]);
+  const API_KEY=import.meta.env.VITE_OPENAI_API_KEY;
+
+  useEffect(() => {
+    api
+     .get("/complaints",{headers: { "x-api-key": API_KEY,
+       },
+      })
+     .then((data) => setComplaints(Array.isArray(data) ? data : []));
+     .catch((error) => {
+       console.error("Error fetching complaints:", error); 
+       setComplaints([]);
+    });
+  }, [API_KEY]);
 
 const DEPARTMENTS: Department[] = [
   "Water Supply", "Electricity", "Roads & Transport", "Sanitation",
