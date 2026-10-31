@@ -1,2 +1,18 @@
-# swaraj-setu
-Swaraj Setu is a citizen-to-government utility platform designed to streamline civic grievance redressal. It provides a transparent bridge between the public and administrative bodies, allowing users to report and track local issues in real time. By optimizing the backend pipeline, it eliminates tracking gaps and ensures swift resolution.
+# Swaraj Setu
+
+Swaraj Setu is a containerized civic grievance platform with an Ollama-powered classifier, MongoDB geospatial complaint feed, JWT authentication, and a municipal admin workflow.
+
+## Run locally
+
+```bash
+./seed_and_run.sh
+```
+
+The script builds the five services, downloads the configured Ollama model, creates the MongoDB geospatial indexes, and seeds ten Delhi/NCR complaints. The gateway is available at `http://localhost/`.
+
+Demo accounts after seeding:
+
+- Citizen: `citizen@swarajsetu.local` / `demo1234`
+- Admin: `admin@swarajsetu.local` / `admin1234`
+
+Only the Nginx gateway publishes host ports. MongoDB, Django, frontend, and Ollama communicate through the private `swaraj-internal-net`.

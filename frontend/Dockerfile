@@ -2,6 +2,6 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm i
+COPY package.json ./
+RUN npm install
 CMD ["npm", "run", "dev"]
