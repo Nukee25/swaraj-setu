@@ -2,6 +2,7 @@ import hashlib
 from datetime import datetime, timezone
 
 from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
 from pymongo import ReturnDocument
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from rest_framework.views import APIView
 from .authentication import issue_token
 from .db import get_db
 from .ollama_client import classify_complaint
-from .serializers import ComplaintCreateSerializer, SmartPreviewSerializer, StatusSerializer
+from .serializers import ComplaintCreateSerializer, SignupSerializer, SmartPreviewSerializer, StatusSerializer
 
 
 def _jsonable(document):
@@ -54,6 +55,59 @@ class LoginView(APIView):
         return Response({"token": issue_token(user), "user": {
             "id": str(user["_id"]), "email": user["email"], "name": user["name"], "role": user["role"],
         }})
+
+
+class SignupView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        email = data["email"].strip().lower()
+        now = datetime.now(timezone.utc)
+        user = {
+            "email": email,
+            "name": data["name"].strip(),
+            "password_hash": hashlib.sha256(data["password"].encode()).hexdigest(),
+            "role": "public",
+            "created_at": now,
+        }
+        try:
+            created = get_db().users.insert_one(user)
+        except DuplicateKeyError:
+            return Response({"detail": "An account with this email already exists"}, status=409)
+        user["_id"] = created.inserted_id
+        return Response({"token": issue_token(user), "user": {
+            "id": str(user["_id"]), "email": user["email"], "name": user["name"], "role": user["role"],
+        }}, status=201)
+
+
+class ProfileView(APIView):
+    def get(self, request):
+        if not request.auth:
+            return Response({"detail": "Authentication required"}, status=401)
+        user_id = _user_id(request)
+        db = get_db()
+        user = db.users.find_one({"_id": ObjectId(user_id)}, {"password_hash": 0})
+        if not user:
+            return Response({"detail": "User not found"}, status=404)
+        raised = list(db.complaints.find({"user_id": user_id}).sort("created_at", -1))
+        upvote_count = db.complaints.count_documents({"upvoted_by": user_id})
+        return Response({
+            "user": {
+                "id": str(user["_id"]),
+                "name": user["name"],
+                "email": user["email"],
+                "role": user["role"],
+            },
+            "stats": {
+                "raised_complaints": len(raised),
+                "upvoted_complaints": upvote_count,
+                "civic_score": len(raised) + upvote_count,
+            },
+            "complaints": [_jsonable(item) for item in raised],
+        })
 
 
 class SmartPreviewView(APIView):
@@ -118,8 +172,13 @@ class UpvoteView(APIView):
             return_document=ReturnDocument.AFTER,
         )
         if not updated:
-            return Response({"detail": "Already upvoted or complaint not found"}, status=409)
-        return Response({"id": complaint_id, "upvotes": updated["upvotes"]})
+            current = get_db().complaints.find_one({"_id": object_id}, {"upvotes": 1, "upvoted_by": 1})
+            if not current:
+                return Response({"detail": "Complaint not found"}, status=404)
+            if user_id in current.get("upvoted_by", []):
+                return Response({"id": complaint_id, "upvotes": current.get("upvotes", 0), "already_upvoted": True})
+            return Response({"detail": "Unable to record upvote"}, status=409)
+        return Response({"id": complaint_id, "upvotes": updated["upvotes"], "already_upvoted": False})
 
 
 class StatusUpdateView(APIView):
@@ -136,15 +195,23 @@ class StatusUpdateView(APIView):
         if not current:
             return Response({"detail": "Complaint not found"}, status=404)
         new_status = serializer.validated_data["status"]
-        allowed = {"Pending": {"In Progress"}, "In Progress": {"Resolved"}, "Resolved": set()}
+        allowed = {
+            "Pending": {"Assigned"},
+            "Assigned": {"In Progress"},
+            "In Progress": {"Resolved"},
+            "Resolved": set(),
+        }
         if new_status != current["status"] and new_status not in allowed.get(current["status"], set()):
             return Response({"detail": f"Invalid lifecycle transition from {current['status']} to {new_status}"}, status=400)
+        resolution_notes = serializer.validated_data.get("resolution_notes", "").strip()
+        if new_status == "Resolved" and not resolution_notes:
+            return Response({"detail": "Resolution proof notes are required before closure"}, status=400)
         now = datetime.now(timezone.utc)
         updated = get_db().complaints.find_one_and_update(
-            {"_id": object_id}, {"$set": {"status": new_status, "resolution_notes": serializer.validated_data.get("resolution_notes", ""), "updated_at": now}}, return_document=ReturnDocument.AFTER,
+            {"_id": object_id}, {"$set": {"status": new_status, "resolution_notes": resolution_notes, "updated_at": now}}, return_document=ReturnDocument.AFTER,
         )
         get_db().status_logs.insert_one({
             "complaint_id": complaint_id, "from_status": current["status"], "to_status": new_status,
-            "changed_by": _user_id(request), "note": serializer.validated_data.get("resolution_notes", ""), "created_at": now,
+            "changed_by": _user_id(request), "note": resolution_notes, "created_at": now,
         })
         return Response(_jsonable(updated))

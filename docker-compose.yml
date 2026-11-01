@@ -6,7 +6,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx:/etc/nginx/conf.d:ro,Z
     depends_on:
       - frontend
       - backend-django
@@ -48,10 +48,8 @@ services:
       - swaraj-internal-net
 
   ollama-nlp:
-    image: ollama/ollama:latest
+    image: ollama/ollama:rocm
     container_name: swaraj-ollama-nlp
-    expose:
-      - "11434"
     volumes:
       - ollama-data:/root/.ollama
     networks:

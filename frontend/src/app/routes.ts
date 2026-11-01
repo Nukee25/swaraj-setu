@@ -7,15 +7,22 @@ import { Complaints } from "./pages/Complaints";
 import { ComplaintDetail } from "./pages/ComplaintDetail";
 import { NotFound } from "./pages/NotFound";
 import { Login } from "./pages/Login";
+import { Signup } from "./pages/Signup";
+import { Profile } from "./pages/Profile";
 import { RequireAuth, RequirePublic } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { ComplaintProvider } from "./context/ComplaintContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 function Providers() {
   return createElement(
-    AuthProvider,
+    ThemeProvider,
     null,
-    createElement(ComplaintProvider, null, createElement(Outlet, null))
+    createElement(
+      AuthProvider,
+      null,
+      createElement(ComplaintProvider, null, createElement(Outlet, null)),
+    ),
   );
 }
 
@@ -24,6 +31,7 @@ export const router = createBrowserRouter([
     Component: Providers,
     children: [
       { path: "/login", Component: Login },
+      { path: "/signup", Component: Signup },
       {
         path: "/",
         Component: RequireAuth,
@@ -35,6 +43,7 @@ export const router = createBrowserRouter([
               { path: "dashboard", Component: Dashboard },
               { path: "complaints", Component: Complaints },
               { path: "complaints/:id", Component: ComplaintDetail },
+              { path: "profile", Component: Profile },
               {
                 Component: RequirePublic,
                 children: [

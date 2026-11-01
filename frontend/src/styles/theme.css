@@ -78,6 +78,26 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+.dark .bg-slate-50 {
+  background-color: oklch(0.18 0 0) !important;
+}
+.dark .bg-slate-100 {
+  background-color: oklch(0.22 0 0) !important;
+}
+.dark .bg-white {
+  background-color: var(--card) !important;
+}
+.dark .text-slate-900 {
+  color: var(--foreground) !important;
+}
+.dark .text-slate-600,
+.dark .text-slate-500 {
+  color: var(--muted-foreground) !important;
+}
+.dark .border-slate-200 {
+  border-color: var(--border) !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

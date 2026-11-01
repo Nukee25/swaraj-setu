@@ -19,3 +19,4 @@ def ensure_indexes():
     db.complaints.create_index([("ticket_number", ASCENDING)], unique=True)
     db.complaints.create_index([("status", ASCENDING), ("primary_department", ASCENDING)])
     db.status_logs.create_index([("complaint_id", ASCENDING), ("created_at", ASCENDING)])
+    db.users.create_index([("email", ASCENDING)], unique=True)

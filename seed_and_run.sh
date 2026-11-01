@@ -6,7 +6,27 @@ until docker compose exec -T mongodb mongosh --quiet --username root --password 
   sleep 2
 done
 
-docker exec swaraj-ollama-nlp ollama pull "${OLLAMA_MODEL:-llama3.2}"
+OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.2}"
+OLLAMA_VOLUME="${COMPOSE_PROJECT_NAME:-swaraj-setu}_ollama-data"
+if ! docker exec swaraj-ollama-nlp ollama list 2>/dev/null | awk 'NR > 1 {print $1}' | grep -Fxq "$OLLAMA_MODEL"; then
+  echo "Provisioning Ollama model outside the internal runtime network..."
+  docker compose stop ollama-nlp >/dev/null
+  if ! docker run --rm --network bridge --entrypoint /bin/sh \
+    -v "${OLLAMA_VOLUME}:/root/.ollama" \
+    ollama/ollama:rocm \
+    -c 'set -eu
+      ollama serve >/tmp/ollama-serve.log 2>&1 &
+      server_pid=$!
+      trap "kill $server_pid" EXIT
+      until ollama list >/dev/null 2>&1; do sleep 1; done
+      ollama pull "$1"' \
+    -- "$OLLAMA_MODEL"; then
+    docker compose up -d ollama-nlp >/dev/null
+    echo "Unable to provision $OLLAMA_MODEL. Check outbound DNS/internet access or pre-load the ollama-data volume." >&2
+    exit 1
+  fi
+  docker compose up -d ollama-nlp >/dev/null
+fi
 docker compose exec -T mongodb mongosh --quiet --username root --password "${MONGO_INITDB_ROOT_PASSWORD:-swaraj-mongo-password}" --authenticationDatabase admin swaraj_setu --eval 'db.complaints.createIndex({location:"2dsphere"}); db.complaints.createIndex({ticket_number:1},{unique:true})'
 
 docker compose exec -T backend-django python - <<'PY'

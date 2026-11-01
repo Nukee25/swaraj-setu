@@ -5,6 +5,12 @@ class SmartPreviewSerializer(serializers.Serializer):
     text = serializers.CharField(min_length=10, max_length=10000)
 
 
+class SignupSerializer(serializers.Serializer):
+    name = serializers.CharField(min_length=2, max_length=120, trim_whitespace=True)
+    email = serializers.EmailField(max_length=254)
+    password = serializers.CharField(min_length=8, max_length=128, write_only=True)
+
+
 class LocationSerializer(serializers.Serializer):
     lat = serializers.FloatField(min_value=-90, max_value=90)
     lng = serializers.FloatField(min_value=-180, max_value=180)
@@ -19,5 +25,5 @@ class ComplaintCreateSerializer(serializers.Serializer):
 
 
 class StatusSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=["Pending", "In Progress", "Resolved"])
+    status = serializers.ChoiceField(choices=["Pending", "Assigned", "In Progress", "Resolved"])
     resolution_notes = serializers.CharField(required=False, allow_blank=True, max_length=5000)
